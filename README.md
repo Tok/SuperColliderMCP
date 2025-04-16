@@ -4,7 +4,7 @@ A Model Context Protocol (MCP) server for SuperCollider using Open Sound Control
 
 ## Description
 
-This project provides a Python interface for communicating with SuperCollider via OSC messages, integrated with Claude Desktop via the Model Context Protocol (MCP). It allows for programmatic control of audio synthesis and processing in SuperCollider from Claude.
+This project provides a Python interface for communicating with [SuperCollider](https://supercollider.github.io/) via OSC messages, integrated with Claude Desktop via the Model Context Protocol (MCP). It allows for programmatic control of audio synthesis and processing in SuperCollider from Claude.
 
 ## Features
 
@@ -18,7 +18,7 @@ This project provides a Python interface for communicating with SuperCollider vi
 ### Prerequisites
 
 - Python 3.12 or higher
-- SuperCollider (with server running on port 57110)
+- [SuperCollider](https://supercollider.github.io/) (with server running on port 57110)
 - UV (Python package manager)
 
 ### Installing
@@ -85,6 +85,16 @@ sc-osc melody --scale blues --tempo 120 --notes 16
 # Play a drum pattern
 sc-osc drums --pattern breakbeat --beats 32 --tempo 140
 ```
+
+## About SuperCollider
+
+[SuperCollider](https://supercollider.github.io/) is a platform for audio synthesis and algorithmic composition, used by musicians, artists, and researchers working with sound. It consists of:
+
+- A real-time audio server with hundreds of unit generators for synthesis and signal processing
+- A cross-platform interpreted programming language (sclang)
+- A flexible scheduling system for precise timing of musical events
+
+This project communicates with SuperCollider's audio server using OSC messages to control synthesizers and create sound patterns.
 
 ## Development
 

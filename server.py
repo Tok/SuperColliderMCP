@@ -1,14 +1,14 @@
 """
 SuperCollider OSC MCP Server for Claude integration.
 
-This script implements an MCP server that allows Claude Desktop to communicate
-with SuperCollider using OSC.
+This script implements a Model Context Protocol (MCP) server that allows Claude Desktop to communicate
+with SuperCollider using Open Sound Control (OSC).
 """
 
 import random
 import time
 from mcp.server.fastmcp import FastMCP
-from supercollidermcp.osc import SuperColliderClient
+from pythonosc import udp_client
 
 # Initialize the MCP server
 mcp = FastMCP("Super-Collider-OSC-MCP")
@@ -22,21 +22,23 @@ async def play_example_osc():
     with random frequency modulation.
     """
     # Create the client
-    client = SuperColliderClient()
+    ip = "127.0.0.1"
+    port = 57110
+    client = udp_client.SimpleUDPClient(ip, port)
 
     # Create a simple sine wave synth
-    client.create_synth("default", 1000, 0, 0, freq=440, amp=0.5)
+    client.send_message("/s_new", ["default", 1000, 0, 0, "freq", 440, "amp", 0.5])
     time.sleep(1)
 
     # Change the frequency a few times
     for x in range(10):
         freq = 300 + random.random() * 700
         # /n_set sets parameters on an existing synth
-        client.set_node_params(1000, freq=freq)
+        client.send_message("/n_set", [1000, "freq", freq])
         time.sleep(0.5)
 
     # Free the synth when done
-    client.free_node(1000)
+    client.send_message("/n_free", [1000])
 
     return "Successfully sent OSC messages using standard SuperCollider commands"
 
@@ -56,7 +58,9 @@ async def play_melody(scale="major", tempo=120):
     tempo = max(60, min(240, int(tempo)))  # Clamp between 60-240 BPM
 
     # Create the client
-    client = SuperColliderClient()
+    ip = "127.0.0.1"
+    port = 57110
+    client = udp_client.SimpleUDPClient(ip, port)
     
     # Define scale patterns (semitones from root)
     scales = {
@@ -98,9 +102,9 @@ async def play_melody(scale="major", tempo=120):
     synth_id = 2000
     for i, (freq, duration) in enumerate(melody):
         # Create a new synth for each note
-        client.create_synth("default", synth_id + i, 0, 0, freq=freq, amp=0.3)
+        client.send_message("/s_new", ["default", synth_id + i, 0, 0, "freq", freq, "amp", 0.3])
         time.sleep(duration)
-        client.free_node(synth_id + i)
+        client.send_message("/n_free", [synth_id + i])
     
     # Play the scale to finish
     for i, semitones in enumerate(scales[scale]):
@@ -109,13 +113,13 @@ async def play_melody(scale="major", tempo=120):
         
         # Play the note
         node_id = 3000 + i
-        client.create_synth("default", node_id, 0, 0, freq=freq, amp=0.3)
+        client.send_message("/s_new", ["default", node_id, 0, 0, "freq", freq, "amp", 0.3])
         
         # Wait for the note duration
         time.sleep(note_duration * 0.9)  # Slightly shorter for legato effect
         
         # Free the node
-        client.free_node(node_id)
+        client.send_message("/n_free", [node_id])
 
     return f"Successfully played a {scale} scale melody at {tempo} BPM"
 
@@ -137,7 +141,9 @@ async def create_drum_pattern(pattern_type="four_on_floor", beats=16, tempo=120)
     tempo = max(60, min(240, int(tempo)))  # Clamp between 60-240 BPM
 
     # Create the client
-    client = SuperColliderClient()
+    ip = "127.0.0.1"
+    port = 57110
+    client = udp_client.SimpleUDPClient(ip, port)
     
     # Define predefined patterns (1 = hit, 0 = rest)
     patterns = {
@@ -186,26 +192,26 @@ async def create_drum_pattern(pattern_type="four_on_floor", beats=16, tempo=120)
         # Play each drum sound if it's a hit
         if pattern["kick"][beat_idx]:
             # Kick drum (low frequency sine with quick decay)
-            client.create_synth("default", 3000 + beat, 0, 0, freq=60, amp=0.5)
+            client.send_message("/s_new", ["default", 3000 + beat, 0, 0, "freq", 60, "amp", 0.5])
 
         if pattern["snare"][beat_idx]:
             # Snare (mid frequency with noise)
-            client.create_synth("default", 4000 + beat, 0, 0, freq=300, amp=0.3)
+            client.send_message("/s_new", ["default", 4000 + beat, 0, 0, "freq", 300, "amp", 0.3])
 
         if pattern["hihat"][beat_idx]:
             # Hi-hat (high frequency)
-            client.create_synth("default", 5000 + beat, 0, 0, freq=1200, amp=0.2)
+            client.send_message("/s_new", ["default", 5000 + beat, 0, 0, "freq", 1200, "amp", 0.2])
 
         # Wait for the next beat
         time.sleep(beat_duration)
 
         # Free all synths from this beat
         if pattern["kick"][beat_idx]:
-            client.free_node(3000 + beat)
+            client.send_message("/n_free", [3000 + beat])
         if pattern["snare"][beat_idx]:
-            client.free_node(4000 + beat)
+            client.send_message("/n_free", [4000 + beat])
         if pattern["hihat"][beat_idx]:
-            client.free_node(5000 + beat)
+            client.send_message("/n_free", [5000 + beat])
 
     return f"Successfully played a {pattern_type} drum pattern with {beats} beats at {tempo} BPM"
 
