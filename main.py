@@ -83,7 +83,7 @@ def main():
     "mcp[cli],python-osc",
     "mcp",
     "run",
-    "B:\\PycharmProjects\\SuperColliderMCP\\server.py"
+    "path/to/server.py"
   ]
 }''')
 

@@ -47,12 +47,12 @@ This package is designed to work with Claude Desktop using the following configu
     "mcp[cli],python-osc",
     "mcp",
     "run",
-    "B:\\PycharmProjects\\SuperColliderMCP\\server.py"
+    "path/to/server.py"
   ]
 }
 ```
 
-Add this configuration to your Claude Desktop settings to enable SuperCollider integration.
+Add this configuration to your Claude Desktop settings to enable SuperCollider integration, replacing `path/to/server.py` with the actual path to the server.py file on your system.
 
 ### Available Commands
 
@@ -68,6 +68,22 @@ You can test the functionality directly by running:
 
 ```bash
 python -m mcp.run server.py
+```
+
+You can also use the command-line interface:
+
+```bash
+# Play a note
+sc-osc note --freq 440 --amp 0.5 --duration 2.0
+
+# Play a scale
+sc-osc scale --scale minor --tempo 100 --direction both
+
+# Generate and play a melody
+sc-osc melody --scale blues --tempo 120 --notes 16
+
+# Play a drum pattern
+sc-osc drums --pattern breakbeat --beats 32 --tempo 140
 ```
 
 ## Development
