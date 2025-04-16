@@ -14,6 +14,7 @@ This project provides a Python interface for communicating with [SuperCollider](
 - Advanced sound design with synthesizers, effects, and modulation
 - Ambient soundscape generation
 - Granular synthesis and layered instruments
+- Chord progression generation with different voicing styles
 - Seamless integration with Claude Desktop
 
 ## Installation
@@ -61,20 +62,40 @@ Add this configuration to your Claude Desktop settings to enable SuperCollider i
 
 Once configured, Claude can use a variety of tools:
 
-#### Basic Tools
-1. **Play Example OSC** - Plays a simple example sound with frequency modulation
-2. **Play Melody** - Creates a procedurally generated melody using a specified scale and tempo
-3. **Create Drum Pattern** - Plays a drum pattern with customizable pattern type, beats, and tempo
-4. **Play Synth** - Plays a single note with different synthesizer types and effects
-5. **Create Sequence** - Creates a musical sequence from a string pattern notation
+#### Basic Sound Generation
+1. **play_example_osc** - Play a simple example sound with frequency modulation
+2. **play_melody** - Create a procedurally generated melody using a specified scale and tempo
+3. **create_drum_pattern** - Play drum patterns in various styles (four_on_floor, breakbeat, shuffle, random)
+4. **play_synth** - Play a single note with different synthesizer types (sine, saw, square, noise, fm, pad) and effects
+5. **create_sequence** - Create a musical sequence from a pattern string with note length variations
 
-#### Advanced Tools
-6. **Create Ambient Soundscape** - Generates evolving ambient textures with customizable mood
-7. **Create Generative Rhythm** - Creates evolving rhythmic patterns in different styles
-8. **Create LFO Modulation** - Applies modulation to synthesizer parameters
-9. **Create Layered Synth** - Creates rich sounds with multiple oscillator layers
-10. **Create Granular Texture** - Creates textures using granular synthesis techniques
-11. **Create Chord Progression** - Plays chord progressions with different voicing styles
+#### Advanced Synthesis
+6. **create_lfo_modulation** - Apply modulation to synthesizer parameters (frequency, amplitude, filter, pan)
+7. **create_layered_synth** - Create rich sounds with multiple detuned oscillator layers and stereo spread
+8. **create_granular_texture** - Create textures using granular synthesis with controllable density and pitch variation
+9. **create_chord_progression** - Play chord progressions with different voicing styles (pad, staccato, arpeggio, power)
+
+#### Soundscape Generation
+10. **create_ambient_soundscape** - Generate evolving ambient textures with different moods (calm, dark, bright, mysterious, chaotic)
+11. **create_generative_rhythm** - Create evolving rhythmic patterns in different styles (minimal, techno, glitch, jazz, ambient)
+
+### Example Usage in Claude
+
+Here are some examples of how to use these tools in Claude:
+
+```
+// Basic melody
+play_melody(scale="pentatonic", tempo=110)
+
+// Layered synth with effects
+create_layered_synth(base_note="F3", num_layers=4, detune=0.2, effects={"reverb": 0.6, "delay": 0.3}, duration=4.0)
+
+// Ambient soundscape
+create_ambient_soundscape(duration=20, density=0.6, pitch_range="medium", mood="mysterious")
+
+// Chord progression
+create_chord_progression(progression="Cmaj7-Am7-Dm7-G7", style="arpeggio", tempo=100, duration_per_chord=2.0)
+```
 
 ### Testing Locally
 
@@ -116,10 +137,13 @@ The project uses FastMCP for handling Claude's requests and the python-osc libra
 
 ## Project Structure
 
-- `server.py` - Main MCP server with basic sound generation tools
-- `soundscape_tools.py` - Tools for creating ambient soundscapes and generative rhythms
-- `advanced_synthesis.py` - Advanced synthesis tools with LFOs, layered synths, and granular synthesis
-- `supercollidermcp/` - Package directory with utility modules
+- `server.py` - Main MCP server with all sound generation tools
+- `supercollidermcp/` - Package directory with utility modules:
+  - `osc.py` - SuperCollider OSC client
+  - `melody.py` - Melody generation utilities
+  - `rhythm.py` - Rhythm pattern utilities
+  - `advanced_synthesis.py` - Advanced synthesis tools
+  - `soundscape_tools.py` - Soundscape and generative rhythm tools
 
 ## Contributing
 
