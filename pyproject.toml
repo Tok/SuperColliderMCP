@@ -1,0 +1,16 @@
+[project]
+name = "supercollidermcp"
+version = "0.1.0"
+description = "MCP server for SuperCollider with OSC communication"
+requires-python = ">=3.12"
+dependencies = [
+    "mcp[cli]>=1.6.0",
+    "python-osc>=1.9.3",
+]
+
+[project.scripts]
+sc-osc = "supercollidermcp.main:main"
+
+[build-system]
+requires = ["setuptools>=61.0"]
+build-backend = "setuptools.build_meta"
