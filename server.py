@@ -9,8 +9,6 @@ import random
 import time
 from mcp.server.fastmcp import FastMCP
 from supercollidermcp.osc import SuperColliderClient
-from supercollidermcp.melody import generate_melody, play_melody, play_scale
-from supercollidermcp.rhythm import play_drum_pattern
 
 # Initialize the MCP server
 mcp = FastMCP("Super-Collider-OSC-MCP")
@@ -60,14 +58,64 @@ async def play_melody(scale="major", tempo=120):
     # Create the client
     client = SuperColliderClient()
     
+    # Define scale patterns (semitones from root)
+    scales = {
+        "major": [0, 2, 4, 5, 7, 9, 11, 12],
+        "minor": [0, 2, 3, 5, 7, 8, 10, 12],
+        "pentatonic": [0, 2, 4, 7, 9, 12],
+        "blues": [0, 3, 5, 6, 7, 10, 12]
+    }
+
+    # Base frequency (A4 = 440Hz)
+    base_freq = 440
+
     # Generate a melody
-    melody = generate_melody(scale=scale, note_count=16)
-    
+    note_count = 16
+    root_note = random.randint(0, 11)  # Random root note
+    octave = random.randint(0, 2)      # Random octave (0, 1, or 2)
+
+    # Time between notes in seconds
+    note_duration = 60 / tempo
+
+    # Create a melody pattern
+    melody = []
+    for i in range(note_count):
+        # Select a note from the scale
+        scale_degree = random.randint(0, len(scales[scale])-1)
+        note = root_note + scales[scale][scale_degree] + (octave * 12)
+
+        # Convert to frequency (equal temperament)
+        freq = base_freq * (2 ** ((note - 9) / 12))
+
+        # Duration (whole, half, quarter notes)
+        duration_options = [0.25, 0.5, 1.0]
+        duration_weights = [0.5, 0.3, 0.2]  # More likely to use shorter notes
+        duration = random.choices(duration_options, duration_weights)[0] * note_duration
+
+        melody.append((freq, duration))
+
     # Play the melody
-    play_melody(melody, tempo=tempo, client=client)
+    synth_id = 2000
+    for i, (freq, duration) in enumerate(melody):
+        # Create a new synth for each note
+        client.create_synth("default", synth_id + i, 0, 0, freq=freq, amp=0.3)
+        time.sleep(duration)
+        client.free_node(synth_id + i)
     
     # Play the scale to finish
-    play_scale(scale=scale, tempo=tempo, direction="both", client=client)
+    for i, semitones in enumerate(scales[scale]):
+        # Calculate frequency
+        freq = base_freq * (2 ** (semitones / 12))
+        
+        # Play the note
+        node_id = 3000 + i
+        client.create_synth("default", node_id, 0, 0, freq=freq, amp=0.3)
+        
+        # Wait for the note duration
+        time.sleep(note_duration * 0.9)  # Slightly shorter for legato effect
+        
+        # Free the node
+        client.free_node(node_id)
 
     return f"Successfully played a {scale} scale melody at {tempo} BPM"
 
@@ -88,8 +136,76 @@ async def create_drum_pattern(pattern_type="four_on_floor", beats=16, tempo=120)
     beats = max(4, min(32, int(beats)))  # Clamp between 4-32 beats
     tempo = max(60, min(240, int(tempo)))  # Clamp between 60-240 BPM
 
+    # Create the client
+    client = SuperColliderClient()
+    
+    # Define predefined patterns (1 = hit, 0 = rest)
+    patterns = {
+        "four_on_floor": {
+            "kick":     [1, 0, 0, 0, 1, 0, 0, 0, 1, 0, 0, 0, 1, 0, 0, 0],
+            "snare":    [0, 0, 1, 0, 0, 0, 1, 0, 0, 0, 1, 0, 0, 0, 1, 0],
+            "hihat":    [1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1],
+        },
+        "breakbeat": {
+            "kick":     [1, 0, 0, 1, 0, 1, 0, 0, 1, 0, 0, 1, 0, 0, 1, 0],
+            "snare":    [0, 0, 1, 0, 0, 0, 1, 0, 0, 0, 1, 0, 0, 1, 0, 1],
+            "hihat":    [1, 1, 0, 1, 1, 0, 1, 1, 0, 1, 1, 0, 1, 0, 1, 0],
+        },
+        "shuffle": {
+            "kick":     [1, 0, 0, 0, 1, 0, 0, 0, 1, 0, 0, 0, 1, 0, 0, 0],
+            "snare":    [0, 0, 1, 0, 0, 0, 1, 0, 0, 0, 1, 0, 0, 0, 1, 0],
+            "hihat":    [1, 0, 1, 0, 1, 0, 1, 0, 1, 0, 1, 0, 1, 0, 1, 0],
+        }
+    }
+
+    # For random pattern, generate one
+    if pattern_type == "random":
+        patterns["random"] = {
+            "kick": [random.choice([0, 1]) for _ in range(16)],
+            "snare": [random.choice([0, 1]) for _ in range(16)],
+            "hihat": [random.choice([0, 1]) for _ in range(16)]
+        }
+        # Ensure at least some beats
+        if sum(patterns["random"]["kick"]) == 0:
+            patterns["random"]["kick"][0] = 1
+        if sum(patterns["random"]["snare"]) == 0:
+            patterns["random"]["snare"][4] = 1
+
+        pattern_type = "random"
+
+    # Select the pattern
+    pattern = patterns[pattern_type]
+
+    # Time between beats in seconds
+    beat_duration = 60 / tempo
+
     # Play the drum pattern
-    play_drum_pattern(pattern_type=pattern_type, beats=beats, tempo=tempo)
+    for beat in range(beats):
+        beat_idx = beat % 16  # Loop the pattern if beats > 16
+
+        # Play each drum sound if it's a hit
+        if pattern["kick"][beat_idx]:
+            # Kick drum (low frequency sine with quick decay)
+            client.create_synth("default", 3000 + beat, 0, 0, freq=60, amp=0.5)
+
+        if pattern["snare"][beat_idx]:
+            # Snare (mid frequency with noise)
+            client.create_synth("default", 4000 + beat, 0, 0, freq=300, amp=0.3)
+
+        if pattern["hihat"][beat_idx]:
+            # Hi-hat (high frequency)
+            client.create_synth("default", 5000 + beat, 0, 0, freq=1200, amp=0.2)
+
+        # Wait for the next beat
+        time.sleep(beat_duration)
+
+        # Free all synths from this beat
+        if pattern["kick"][beat_idx]:
+            client.free_node(3000 + beat)
+        if pattern["snare"][beat_idx]:
+            client.free_node(4000 + beat)
+        if pattern["hihat"][beat_idx]:
+            client.free_node(5000 + beat)
 
     return f"Successfully played a {pattern_type} drum pattern with {beats} beats at {tempo} BPM"
 

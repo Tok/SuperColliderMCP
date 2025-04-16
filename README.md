@@ -1,10 +1,10 @@
 # SuperCollider OSC MCP
 
-A Messaging Control Protocol (MCP) server for SuperCollider using Open Sound Control (OSC).
+A Model Context Protocol (MCP) server for SuperCollider using Open Sound Control (OSC).
 
 ## Description
 
-This project provides a Python interface for communicating with SuperCollider via OSC messages, integrated with Claude Desktop via the MCP protocol. It allows for programmatic control of audio synthesis and processing in SuperCollider from Claude.
+This project provides a Python interface for communicating with SuperCollider via OSC messages, integrated with Claude Desktop via the Model Context Protocol (MCP). It allows for programmatic control of audio synthesis and processing in SuperCollider from Claude.
 
 ## Features
 
@@ -88,7 +88,7 @@ sc-osc drums --pattern breakbeat --beats 32 --tempo 140
 
 ## Development
 
-The project uses FastMCP for handling Claude's requests and the python-osc library for communicating with SuperCollider.
+The project uses FastMCP for handling Claude's requests and the python-osc library for communicating with SuperCollider. For more information about the Model Context Protocol, visit [https://modelcontextprotocol.io/](https://modelcontextprotocol.io/).
 
 ## Contributing
 

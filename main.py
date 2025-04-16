@@ -73,7 +73,7 @@ def main():
     
     else:
         parser.print_help()
-        print("\nTip: You can also use the Claude Desktop MCP integration with the following configuration:")
+        print("\nTip: You can also use the Claude Desktop Model Context Protocol (MCP) integration with the following configuration:")
         print('''
 "Super-Collider-OSC-MCP": {
   "command": "uv",
