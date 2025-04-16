@@ -11,6 +11,9 @@ This project provides a Python interface for communicating with [SuperCollider](
 - Send OSC messages to SuperCollider
 - Play procedurally generated melodies with different scales
 - Create rhythmic drum patterns
+- Advanced sound design with synthesizers, effects, and modulation
+- Ambient soundscape generation
+- Granular synthesis and layered instruments
 - Seamless integration with Claude Desktop
 
 ## Installation
@@ -56,11 +59,22 @@ Add this configuration to your Claude Desktop settings to enable SuperCollider i
 
 ### Available Commands
 
-Once configured, Claude can use the following commands:
+Once configured, Claude can use a variety of tools:
 
+#### Basic Tools
 1. **Play Example OSC** - Plays a simple example sound with frequency modulation
 2. **Play Melody** - Creates a procedurally generated melody using a specified scale and tempo
 3. **Create Drum Pattern** - Plays a drum pattern with customizable pattern type, beats, and tempo
+4. **Play Synth** - Plays a single note with different synthesizer types and effects
+5. **Create Sequence** - Creates a musical sequence from a string pattern notation
+
+#### Advanced Tools
+6. **Create Ambient Soundscape** - Generates evolving ambient textures with customizable mood
+7. **Create Generative Rhythm** - Creates evolving rhythmic patterns in different styles
+8. **Create LFO Modulation** - Applies modulation to synthesizer parameters
+9. **Create Layered Synth** - Creates rich sounds with multiple oscillator layers
+10. **Create Granular Texture** - Creates textures using granular synthesis techniques
+11. **Create Chord Progression** - Plays chord progressions with different voicing styles
 
 ### Testing Locally
 
@@ -99,6 +113,13 @@ This project communicates with SuperCollider's audio server using OSC messages t
 ## Development
 
 The project uses FastMCP for handling Claude's requests and the python-osc library for communicating with SuperCollider. For more information about the Model Context Protocol, visit [https://modelcontextprotocol.io/](https://modelcontextprotocol.io/).
+
+## Project Structure
+
+- `server.py` - Main MCP server with basic sound generation tools
+- `soundscape_tools.py` - Tools for creating ambient soundscapes and generative rhythms
+- `advanced_synthesis.py` - Advanced synthesis tools with LFOs, layered synths, and granular synthesis
+- `supercollidermcp/` - Package directory with utility modules
 
 ## Contributing
 
