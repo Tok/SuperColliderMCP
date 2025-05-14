@@ -1,3 +1,5 @@
+[![Verified on MseeP](https://mseep.ai/badge.svg)](https://mseep.ai/app/70ac07b9-ec05-4fec-9456-5c4331cdf994)
+
 # SuperCollider OSC MCP 🎛️
 
 A Model Context Protocol (MCP) server for SuperCollider using Open Sound Control (OSC).
@@ -235,7 +237,7 @@ sc-osc drums --pattern breakbeat --beats 32 --tempo 140
 
 This project communicates with SuperCollider's audio server using OSC messages to control synthesizers and create sound patterns.
 
-## Security Assessment
+## External Security Assessment
 [![MseeP.ai Security Assessment Badge](https://mseep.net/pr/tok-supercollidermcp-badge.png)](https://mseep.ai/app/tok-supercollidermcp)
 
 ## Development
