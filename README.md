@@ -1,3 +1,5 @@
+[![MseeP.ai Security Assessment Badge](https://mseep.net/pr/tok-supercollidermcp-badge.png)](https://mseep.ai/app/tok-supercollidermcp)
+
 # SuperCollider OSC MCP 🎛️
 
 A Model Context Protocol (MCP) server for SuperCollider using Open Sound Control (OSC).
