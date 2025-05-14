@@ -19,39 +19,8 @@ This project provides a Python interface for communicating with [SuperCollider](
 - Chord progression generation with different voicing styles
 - Flexible integration with multiple AI development- and assistance environments
 
-## Architecture
-
-```mermaid
-graph TD
-    classDef aiAssistant fill:#00bfff,color:#ffffff,stroke:#000000;
-    classDef mcpServer fill:#6bd968,color:#000000,stroke:#000000;
-    classDef audioServer fill:#8ae180,color:#000000,stroke:#000000;
-    classDef pythonClient fill:#a5e9a3,color:#000000,stroke:#000000;
-    classDef protocolLayer fill:#c0c0c0,color:#000000,stroke:#000000,stroke-dasharray:5;
-
-    A[AI Assistant] -->|Method Call| B[MCP Server]
-    B -->|OSC| C[SuperCollider Audio Server]
-    B <-->|Control| D[Python OSC Client]
-
-    subgraph protocolContainer["Protocol Layer"]
-        style protocolContainer fill:#f0f0f0,stroke:#888,stroke-width:2px
-        direction TB
-        E[🔍 Method Registry]
-        F[✅ Parameter Validation]
-        G[📦 Response Handling]
-    end
-
-    A -->|Invokes| E
-    E -->|Validates| F
-    F -->|Formats| G
-    G -->|Routes| B
-
-    class A aiAssistant;
-    class B mcpServer;
-    class C audioServer;
-    class D pythonClient;
-    class E,F,G protocolLayer;
-```
+The available tools were not created with direct usage in mind and may therefore stay limited in scope.
+They are intended to serve as a codebase with templates for further customization and project specific implementation by your AI agent after giving it full access to the code.
 
 ## Installation
 
