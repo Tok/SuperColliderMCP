@@ -80,7 +80,7 @@ def main():
   "args": [
     "run",
     "--with",
-    "mcp[cli],python-osc",
+    "mcp[cli]<2,python-osc",
     "mcp",
     "run",
     "path/to/server.py"

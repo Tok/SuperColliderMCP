@@ -11,7 +11,7 @@ from .osc import SuperColliderClient
 from .melody import play_scale, generate_melody, play_melody
 from .rhythm import play_drum_pattern
 
-__version__ = "0.1.0"
+__version__ = "0.1.1"
 
 # Import advanced modules
 try:
