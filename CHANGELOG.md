@@ -1,5 +1,11 @@
 # Changelog
 
+## 0.2.1
+
+- Listed in the official [MCP Registry](https://registry.modelcontextprotocol.io) as
+  `io.github.Tok/supercollider-mcp`; each release now publishes there automatically after PyPI.
+- README: install with `uvx supercollider-mcp`, PyPI and MCP Registry badges, MseeP badges removed.
+
 ## 0.2.0
 
 A rewrite. Every tool now produces the sound it describes, and none of them block.
