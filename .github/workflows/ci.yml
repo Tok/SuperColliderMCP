@@ -1,0 +1,50 @@
+name: CI
+
+on:
+  push:
+    branches: [main]
+  pull_request:
+
+jobs:
+  lint:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: astral-sh/setup-uv@v6
+      - run: uv sync --locked
+      - run: uv run ruff check .
+      - run: uv run ruff format --check .
+
+  test:
+    runs-on: ubuntu-24.04
+    strategy:
+      fail-fast: false
+      matrix:
+        python-version: ["3.10", "3.11", "3.12", "3.13"]
+    steps:
+      - uses: actions/checkout@v4
+      - uses: astral-sh/setup-uv@v6
+        with:
+          python-version: ${{ matrix.python-version }}
+
+      - name: Install SuperCollider server and JACK
+        run: |
+          sudo apt-get update
+          sudo DEBIAN_FRONTEND=noninteractive apt-get install -y --no-install-recommends supercollider-server jackd2
+
+      # The offline render tests only need the scsynth binary; the live test needs a running server,
+      # which gets a dummy JACK device since CI machines have no sound card.
+      - name: Start scsynth on a dummy audio device
+        run: |
+          jackd --no-realtime -d dummy -r 48000 -p 1024 > jackd.log 2>&1 &
+          sleep 2
+          scsynth -u 57199 -i 0 -o 2 > scsynth.log 2>&1 &
+          timeout 30 bash -c 'until grep -q "server ready" scsynth.log; do sleep 0.5; done'
+
+      - run: uv sync --locked
+      - run: uv run pytest -v
+        env:
+          SC_TEST_PORT: "57199"
+
+      - if: failure()
+        run: cat jackd.log scsynth.log
