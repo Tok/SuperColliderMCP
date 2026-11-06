@@ -1,16 +1,54 @@
 [project]
 name = "supercollidermcp"
-version = "0.1.1"
-description = "MCP server for SuperCollider with OSC communication"
-requires-python = ">=3.12"
+version = "0.2.0"
+description = "MCP server that lets AI assistants make sound with SuperCollider over OSC"
+readme = "README.md"
+license = "MIT"
+license-files = ["LICENSE"]
+requires-python = ">=3.10"
+keywords = ["supercollider", "mcp", "model-context-protocol", "osc", "music", "audio", "synthesis"]
+classifiers = [
+    "Development Status :: 4 - Beta",
+    "Intended Audience :: Developers",
+    "Topic :: Multimedia :: Sound/Audio :: Sound Synthesis",
+    "Programming Language :: Python :: 3",
+    "Programming Language :: Python :: 3.10",
+    "Programming Language :: Python :: 3.11",
+    "Programming Language :: Python :: 3.12",
+    "Programming Language :: Python :: 3.13",
+]
 dependencies = [
-    "mcp[cli]>=1.6.0,<2",
-    "python-osc>=1.9.3",
+    "mcp>=2.3,<3",
+    "python-osc>=1.9",
 ]
 
+[project.urls]
+Homepage = "https://github.com/Tok/SuperColliderMCP"
+Issues = "https://github.com/Tok/SuperColliderMCP/issues"
+Changelog = "https://github.com/Tok/SuperColliderMCP/blob/main/CHANGELOG.md"
+
 [project.scripts]
-sc-osc = "supercollidermcp.main:main"
+supercollidermcp = "supercollidermcp.__main__:main"
+
+[dependency-groups]
+dev = [
+    "pytest>=8",
+    "ruff>=0.8",
+]
 
 [build-system]
-requires = ["setuptools>=61.0"]
-build-backend = "setuptools.build_meta"
+requires = ["hatchling>=1.26"]
+build-backend = "hatchling.build"
+
+[tool.hatch.build.targets.sdist]
+include = ["supercollidermcp", "tests", "scripts", "README.md", "CHANGELOG.md", "LICENSE"]
+
+[tool.ruff]
+line-length = 120
+target-version = "py310"
+
+[tool.ruff.lint]
+select = ["E", "F", "W", "I", "UP", "B", "SIM", "RUF"]
+
+[tool.pytest.ini_options]
+testpaths = ["tests"]

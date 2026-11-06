@@ -1,137 +1,226 @@
+"""Asynchronous OSC client for scsynth that also listens for replies.
+
+scsynth answers on the address a command came from, so one UDP socket is used
+for both sending and receiving. Replies resolve awaiting futures; `/fail`
+messages are kept in `recent_errors` (and fail the request they belong to).
 """
-OSC communication module for SuperCollider.
 
-This module provides classes and functions for sending OSC messages to SuperCollider.
-"""
+from __future__ import annotations
 
-import time
-from pythonosc import udp_client
+import asyncio
+import itertools
+import logging
+from collections import deque
+from collections.abc import Callable, Sequence
+from dataclasses import dataclass
 
-# Default SuperCollider settings
-DEFAULT_SC_IP = "127.0.0.1"
-DEFAULT_SC_PORT = 57110
+from pythonosc.osc_bundle import OscBundle
+from pythonosc.osc_bundle_builder import OscBundleBuilder
+from pythonosc.osc_message import OscMessage
+from pythonosc.osc_message_builder import OscMessageBuilder
 
-class SuperColliderClient:
-    """Client for communicating with SuperCollider via OSC."""
-    
-    def __init__(self, ip=DEFAULT_SC_IP, port=DEFAULT_SC_PORT):
-        """
-        Initialize a SuperCollider OSC client.
-        
-        Args:
-            ip (str): The IP address of the SuperCollider server.
-            port (int): The port of the SuperCollider server.
-        """
-        self.ip = ip
-        self.port = port
-        self.client = udp_client.SimpleUDPClient(ip, port)
-    
-    def send_message(self, address, args):
-        """
-        Send an OSC message to SuperCollider.
-        
-        Args:
-            address (str): The OSC address pattern.
-            args (list): A list of arguments to send with the message.
-        """
+log = logging.getLogger(__name__)
+
+OscArg = int | float | str | bytes
+Message = tuple[str, Sequence[OscArg]]
+
+
+class SCError(Exception):
+    """A problem talking to scsynth; the message is meant for the user."""
+
+
+class ServerUnreachable(SCError):
+    pass
+
+
+@dataclass(frozen=True)
+class ServerStatus:
+    ugens: int
+    synths: int
+    groups: int
+    synthdefs: int
+    avg_cpu: float
+    peak_cpu: float
+    nominal_sample_rate: float
+    actual_sample_rate: float
+
+
+def encode_message(address: str, args: Sequence[OscArg] = ()) -> OscMessage:
+    builder = OscMessageBuilder(address)
+    for arg in args:
+        if isinstance(arg, bool):
+            builder.add_arg(int(arg), "i")
+        elif isinstance(arg, int):
+            builder.add_arg(arg, "i")
+        elif isinstance(arg, float):
+            builder.add_arg(arg, "f")
+        elif isinstance(arg, str):
+            builder.add_arg(arg, "s")
+        elif isinstance(arg, bytes):
+            builder.add_arg(arg, "b")
+        else:
+            raise TypeError(f"unsupported OSC argument {arg!r} for {address}")
+    return builder.build()
+
+
+def encode_bundle(timestamp: float, messages: Sequence[Message]) -> OscBundle:
+    """A bundle executed by scsynth at `timestamp` (seconds since the Unix epoch)."""
+    builder = OscBundleBuilder(timestamp)
+    for address, args in messages:
+        builder.add_content(encode_message(address, args))
+    return builder.build()
+
+
+def _messages(data: bytes) -> list[OscMessage]:
+    if OscBundle.dgram_is_bundle(data):
+        out: list[OscMessage] = []
+        for content in OscBundle(data):
+            out += [content] if isinstance(content, OscMessage) else _messages(content.dgram)
+        return out
+    return [OscMessage(data)]
+
+
+class _Protocol(asyncio.DatagramProtocol):
+    def __init__(self, client: SCClient) -> None:
+        self.client = client
+
+    def datagram_received(self, data: bytes, addr: tuple[str, int]) -> None:
         try:
-            self.client.send_message(address, args)
-            return True
-        except Exception as e:
-            print(f"Error sending OSC message: {e}")
+            messages = _messages(data)
+        except Exception:  # malformed packet; nothing we can do with it
+            log.debug("ignoring unparseable datagram from %s", addr)
+            return
+        for message in messages:
+            self.client._dispatch(message.address, list(message.params))
+
+    def error_received(self, exc: Exception) -> None:
+        # On Linux a connected UDP socket reports ICMP "port unreachable" here.
+        self.client._fail_all(exc)
+
+
+@dataclass
+class _Waiter:
+    address: str
+    request: str
+    match: Callable[[list], bool]
+    future: asyncio.Future
+
+
+class SCClient:
+    def __init__(self, host: str = "127.0.0.1", port: int = 57110, timeout: float = 1.0) -> None:
+        self.host, self.port, self.timeout = host, port, timeout
+        self.recent_errors: deque[str] = deque(maxlen=20)
+        self._transport: asyncio.DatagramTransport | None = None
+        self._waiters: list[_Waiter] = []
+        self._sync_ids = itertools.count(1)
+
+    @property
+    def address(self) -> str:
+        return f"{self.host}:{self.port}"
+
+    async def _ensure_transport(self) -> asyncio.DatagramTransport:
+        if self._transport is None or self._transport.is_closing():
+            loop = asyncio.get_running_loop()
+            self._transport, _ = await loop.create_datagram_endpoint(
+                lambda: _Protocol(self), remote_addr=(self.host, self.port)
+            )
+        return self._transport
+
+    def close(self) -> None:
+        if self._transport is not None:
+            self._transport.close()
+            self._transport = None
+
+    # ---- sending -----------------------------------------------------------
+
+    async def send(self, address: str, *args: OscArg) -> None:
+        (await self._ensure_transport()).sendto(encode_message(address, args).dgram)
+
+    async def send_bundle(self, timestamp: float, messages: Sequence[Message]) -> None:
+        (await self._ensure_transport()).sendto(encode_bundle(timestamp, messages).dgram)
+
+    async def request(
+        self,
+        address: str,
+        args: Sequence[OscArg],
+        reply: str,
+        match: Callable[[list], bool] = lambda _: True,
+        timeout: float | None = None,
+    ) -> list:
+        """Send a command and wait for the reply `reply` whose arguments satisfy `match`."""
+        transport = await self._ensure_transport()
+        waiter = _Waiter(reply, address, match, asyncio.get_running_loop().create_future())
+        self._waiters.append(waiter)
+        try:
+            transport.sendto(encode_message(address, args).dgram)
+            return await asyncio.wait_for(waiter.future, timeout or self.timeout)
+        except (asyncio.TimeoutError, OSError) as exc:
+            raise ServerUnreachable(
+                f"No reply from the SuperCollider server at {self.address}. Is scsynth running? "
+                "Boot it from the SuperCollider IDE (Server > Boot Server), with s.boot in sclang, "
+                f"or run `scsynth -u {self.port}`."
+            ) from exc
+        finally:
+            if waiter in self._waiters:
+                self._waiters.remove(waiter)
+
+    # ---- receiving ---------------------------------------------------------
+
+    def _dispatch(self, address: str, args: list) -> None:
+        if address == "/fail":
+            text = " ".join(str(a) for a in args)
+            self.recent_errors.append(text)
+            log.warning("scsynth: /fail %s", text)
+            command = args[0] if args else None
+            for waiter in list(self._waiters):
+                if waiter.request == command and not waiter.future.done():
+                    waiter.future.set_exception(SCError(f"scsynth refused {text}"))
+            return
+        for waiter in list(self._waiters):
+            if waiter.address == address and not waiter.future.done() and waiter.match(args):
+                waiter.future.set_result(args)
+                return
+
+    def _fail_all(self, exc: Exception) -> None:
+        for waiter in list(self._waiters):
+            if not waiter.future.done():
+                waiter.future.set_exception(exc)
+        # the socket is unusable after an ICMP error on some platforms; reconnect next time
+        self.close()
+
+    # ---- commands ----------------------------------------------------------
+
+    async def status(self) -> ServerStatus:
+        args = await self.request("/status", [], "/status.reply")
+        return ServerStatus(*(int(a) for a in args[1:5]), *(float(a) for a in args[5:9]))
+
+    async def version(self) -> str | None:
+        """scsynth version string such as '3.13.0', or None if the server is too old to say."""
+        try:
+            args = await self.request("/version", [], "/version.reply", timeout=0.5)
+        except SCError:
+            return None
+        return f"{args[1]}.{args[2]}{args[3]}" if len(args) >= 4 else None
+
+    async def sync(self, timeout: float = 5.0) -> None:
+        """Wait until scsynth has finished every asynchronous command sent before this one."""
+        sync_id = next(self._sync_ids)
+        await self.request("/sync", [sync_id], "/synced", lambda a: bool(a) and a[0] == sync_id, timeout)
+
+    async def synth_exists(self, node_id: int, control: str) -> bool:
+        """True if synth `node_id` exists (asked via /s_get, which always answers the sender)."""
+        return await self._exists("/s_get", [node_id, control], "/n_set", node_id)
+
+    async def group_exists(self, node_id: int) -> bool:
+        """True if group `node_id` exists (asked via /g_queryTree, which always answers the sender)."""
+        return await self._exists("/g_queryTree", [node_id, 0], "/g_queryTree.reply", node_id, index=1)
+
+    async def _exists(self, address: str, args: list, reply: str, node_id: int, index: int = 0) -> bool:
+        # /n_query is no use here: its /n_info reply only goes to clients registered with /notify
+        try:
+            await self.request(address, args, reply, lambda a: len(a) > index and a[index] == node_id)
+        except ServerUnreachable:
+            raise
+        except SCError:
             return False
-
-    def create_synth(self, synth_name, node_id=1000, add_action=0, group_id=0, **kwargs):
-        """
-        Create a new synth node.
-        
-        Args:
-            synth_name (str): The name of the synth definition.
-            node_id (int): The ID to use for the new node.
-            add_action (int): The add action (0=add to head, 1=add to tail, etc).
-            group_id (int): The group ID to add the node to.
-            **kwargs: Additional parameters to pass to the synth.
-        """
-        # Format args according to SuperCollider's /s_new protocol
-        args = [synth_name, node_id, add_action, group_id]
-        
-        # Add any additional parameters
-        for key, value in kwargs.items():
-            args.append(key)
-            args.append(value)
-        
-        return self.send_message("/s_new", args)
-    
-    def set_node_params(self, node_id, **kwargs):
-        """
-        Set parameters on an existing synth node.
-        
-        Args:
-            node_id (int): The ID of the node to modify.
-            **kwargs: Parameters to set on the node.
-        """
-        args = [node_id]
-        
-        # Add parameter pairs
-        for key, value in kwargs.items():
-            args.append(key)
-            args.append(value)
-        
-        return self.send_message("/n_set", args)
-    
-    def free_node(self, node_id):
-        """
-        Free a synth node.
-        
-        Args:
-            node_id (int): The ID of the node to free.
-        """
-        return self.send_message("/n_free", [node_id])
-    
-    def play_note(self, frequency=440, amplitude=0.5, duration=1.0, node_id=None):
-        """
-        Play a single note using a simple sine oscillator.
-        
-        Args:
-            frequency (float): The frequency in Hz.
-            amplitude (float): The amplitude (0-1).
-            duration (float): The duration in seconds.
-            node_id (int): The node ID to use (generated if None).
-        """
-        if node_id is None:
-            # Generate a semi-random node ID to avoid conflicts
-            node_id = int(time.time() * 1000) % 10000
-            
-        # Create the synth
-        success = self.create_synth("default", node_id, 0, 0, freq=frequency, amp=amplitude)
-        
-        if success and duration > 0:
-            # Wait and then free the node
-            time.sleep(duration)
-            self.free_node(node_id)
-            
-        return node_id
-
-# Create a default client for convenience
-default_client = SuperColliderClient()
-
-# Export functions that use the default client
-def send_message(address, args):
-    """Send an OSC message using the default client."""
-    return default_client.send_message(address, args)
-
-def create_synth(synth_name, node_id=1000, add_action=0, group_id=0, **kwargs):
-    """Create a new synth node using the default client."""
-    return default_client.create_synth(synth_name, node_id, add_action, group_id, **kwargs)
-
-def set_node_params(node_id, **kwargs):
-    """Set parameters on an existing synth node using the default client."""
-    return default_client.set_node_params(node_id, **kwargs)
-
-def free_node(node_id):
-    """Free a synth node using the default client."""
-    return default_client.free_node(node_id)
-
-def play_note(frequency=440, amplitude=0.5, duration=1.0, node_id=None):
-    """Play a single note using the default client."""
-    return default_client.play_note(frequency, amplitude, duration, node_id)
+        return True
