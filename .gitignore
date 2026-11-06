@@ -37,5 +37,6 @@ venv.bak/
 *.swp
 *.swo
 
-# Custom
-uv.lock
+# Local
+.pytest_cache/
+.ruff_cache/
