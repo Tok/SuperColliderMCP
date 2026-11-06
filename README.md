@@ -1,6 +1,5 @@
 [![PyPI](https://img.shields.io/pypi/v/supercollider-mcp)](https://pypi.org/project/supercollider-mcp/)
 [![CI](https://github.com/Tok/SuperColliderMCP/actions/workflows/ci.yml/badge.svg)](https://github.com/Tok/SuperColliderMCP/actions/workflows/ci.yml)
-[![Verified on MseeP](https://mseep.ai/badge.svg)](https://mseep.ai/app/70ac07b9-ec05-4fec-9456-5c4331cdf994)
 
 # SuperCollider MCP 🎛️
 
@@ -193,10 +192,6 @@ supercollidermcp/
 
 Contributions are welcome. New sounds usually mean a SynthDef in `synthdefs.scd` plus a composer function
 in `compose.py`.
-
-## External Security Assessment
-
-[![MseeP.ai Security Assessment Badge](https://mseep.net/pr/tok-supercollidermcp-badge.png)](https://mseep.ai/app/tok-supercollidermcp)
 
 ## License
 
