@@ -1,5 +1,8 @@
 [![PyPI](https://img.shields.io/pypi/v/supercollider-mcp)](https://pypi.org/project/supercollider-mcp/)
+[![MCP Registry](https://img.shields.io/badge/dynamic/json?url=https%3A%2F%2Fregistry.modelcontextprotocol.io%2Fv0.1%2Fservers%2Fio.github.Tok%252Fsupercollider-mcp%2Fversions%2Flatest&query=%24.server.version&label=MCP%20Registry)](https://registry.modelcontextprotocol.io/v0.1/servers/io.github.Tok%2Fsupercollider-mcp/versions/latest)
 [![CI](https://github.com/Tok/SuperColliderMCP/actions/workflows/ci.yml/badge.svg)](https://github.com/Tok/SuperColliderMCP/actions/workflows/ci.yml)
+
+<!-- mcp-name: io.github.Tok/supercollider-mcp -->
 
 # SuperCollider MCP 🎛️
 

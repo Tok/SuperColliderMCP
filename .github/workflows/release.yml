@@ -1,8 +1,9 @@
 name: Release
 
-# Publishes to PyPI when a GitHub release is published. Uses PyPI trusted publishing:
-# add this repository and workflow (release.yml, environment "pypi") as a trusted
-# publisher for the "supercollider-mcp" project on pypi.org first.
+# When a GitHub release is published:
+#   1. build the package and check that the tag matches pyproject.toml and server.json
+#   2. publish it to PyPI (trusted publishing, environment "pypi")
+#   3. publish server.json to the official MCP Registry (GitHub OIDC, no secrets needed)
 on:
   release:
     types: [published]
@@ -13,6 +14,14 @@ jobs:
     steps:
       - uses: actions/checkout@v4
       - uses: astral-sh/setup-uv@v6
+      - name: Check that the tag matches the package and server.json versions
+        run: |
+          tag="${GITHUB_REF_NAME#v}"
+          package="$(sed -n 's/^version = "\(.*\)"/\1/p' pyproject.toml)"
+          server="$(jq -r .version server.json)"
+          server_package="$(jq -r '.packages[0].version' server.json)"
+          echo "tag=$tag pyproject=$package server.json=$server/$server_package"
+          test "$tag" = "$package" && test "$tag" = "$server" && test "$tag" = "$server_package"
       - run: uv build
       - uses: actions/upload-artifact@v4
         with:
@@ -31,3 +40,46 @@ jobs:
           name: dist
           path: dist/
       - uses: pypa/gh-action-pypi-publish@release/v1
+
+  mcp-registry:
+    needs: publish
+    runs-on: ubuntu-latest
+    permissions:
+      id-token: write
+      contents: read
+    env:
+      MCP_PUBLISHER_VERSION: v1.8.8
+    steps:
+      - uses: actions/checkout@v4
+
+      # The registry verifies ownership by reading the mcp-name marker from the PyPI
+      # package description, so wait until PyPI serves the version we just uploaded.
+      - name: Wait for the release on PyPI
+        run: |
+          version="${GITHUB_REF_NAME#v}"
+          for _ in $(seq 1 30); do
+            curl -sf "https://pypi.org/pypi/supercollider-mcp/$version/json" > /dev/null && exit 0
+            sleep 10
+          done
+          echo "supercollider-mcp $version did not appear on PyPI" >&2
+          exit 1
+
+      - name: Install cosign
+        uses: sigstore/cosign-installer@6f9f17788090df1f26f669e9d70d6ae9567deba6 # v4.1.2
+
+      - name: Download and verify mcp-publisher
+        run: |
+          set -euo pipefail
+          archive="mcp-publisher_linux_amd64.tar.gz"
+          base_url="https://github.com/modelcontextprotocol/registry/releases/download/${MCP_PUBLISHER_VERSION}"
+          curl --fail --location --silent --show-error --output "$archive" "$base_url/$archive"
+          curl --fail --location --silent --show-error --output "$archive.sigstore.json" "$base_url/$archive.sigstore.json"
+          cosign verify-blob \
+            --bundle "$archive.sigstore.json" \
+            --certificate-identity "https://github.com/modelcontextprotocol/registry/.github/workflows/release.yml@refs/tags/${MCP_PUBLISHER_VERSION}" \
+            --certificate-oidc-issuer "https://token.actions.githubusercontent.com" \
+            "$archive"
+          tar xzf "$archive" mcp-publisher
+
+      - run: ./mcp-publisher login github-oidc
+      - run: ./mcp-publisher publish

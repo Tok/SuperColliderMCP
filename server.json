@@ -1,0 +1,38 @@
+{
+  "$schema": "https://static.modelcontextprotocol.io/schemas/2025-12-11/server.schema.json",
+  "name": "io.github.Tok/supercollider-mcp",
+  "title": "SuperCollider",
+  "description": "Make sound with SuperCollider: synths, drums, chords, melodies and soundscapes over OSC.",
+  "repository": {
+    "url": "https://github.com/Tok/SuperColliderMCP",
+    "source": "github"
+  },
+  "version": "0.2.1",
+  "packages": [
+    {
+      "registryType": "pypi",
+      "registryBaseUrl": "https://pypi.org",
+      "identifier": "supercollider-mcp",
+      "version": "0.2.1",
+      "runtimeHint": "uvx",
+      "transport": {
+        "type": "stdio"
+      },
+      "environmentVariables": [
+        {
+          "name": "SC_HOST",
+          "description": "Host of the SuperCollider server (scsynth)",
+          "default": "127.0.0.1",
+          "isRequired": false
+        },
+        {
+          "name": "SC_PORT",
+          "description": "UDP port of the SuperCollider server (scsynth)",
+          "default": "57110",
+          "format": "number",
+          "isRequired": false
+        }
+      ]
+    }
+  ]
+}
