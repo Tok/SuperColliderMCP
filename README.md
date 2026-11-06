@@ -37,7 +37,7 @@ macOS, `sudo apt install supercollider` on Debian/Ubuntu), then boot the server:
 Claude Code:
 
 ```bash
-claude mcp add supercollider -- uvx --from git+https://github.com/Tok/SuperColliderMCP@v0.2.0 supercollider-mcp
+claude mcp add supercollider -- uvx supercollider-mcp
 ```
 
 Claude Desktop, Cursor, Cline, Roo Code and other clients that use an `mcpServers` config:
@@ -47,15 +47,14 @@ Claude Desktop, Cursor, Cline, Roo Code and other clients that use an `mcpServer
   "mcpServers": {
     "supercollider": {
       "command": "uvx",
-      "args": ["--from", "git+https://github.com/Tok/SuperColliderMCP@v0.2.0", "supercollider-mcp"]
+      "args": ["supercollider-mcp"]
     }
   }
 }
 ```
 
-This installs the v0.2.0 release straight from GitHub; `uvx` caches it, so later starts are quick. A PyPI
-release (plain `uvx supercollider-mcp`) is on the way. To follow the latest unreleased code instead, drop the
-`@v0.2.0`.
+To run the latest code from GitHub instead of the PyPI release, use
+`"args": ["--from", "git+https://github.com/Tok/SuperColliderMCP", "supercollider-mcp"]`.
 
 **3. Ask for something.** Start with "play a test sound" to check the connection, then try the prompts
 below.
@@ -68,8 +67,7 @@ below.
 | scsynth UDP port | `--port` | `SC_PORT` | `57110` |
 | log level (stderr) | `--log-level` | | `WARNING` |
 
-Flags go after the command name, for example
-`"args": ["--from", "git+https://github.com/Tok/SuperColliderMCP@v0.2.0", "supercollider-mcp", "--port", "57111"]`.
+For example `"args": ["supercollider-mcp", "--port", "57111"]`.
 
 ## Tools
 
@@ -136,7 +134,7 @@ a call asks for effects, its voices go to a private bus that one `mcp_fx` synth 
 
 ## Upgrading from 0.1
 
-- Point your MCP config at the `uvx` command shown above. Old configs that run
+- Point your MCP config at `uvx supercollider-mcp` as shown above. Old configs that run
   `mcp run path/to/server.py` still work through a small compatibility `server.py`.
 - Sounds now come from real SynthDefs, so you no longer need sclang's `default` synth.
 - Tools return right away instead of blocking until the sound ends.
