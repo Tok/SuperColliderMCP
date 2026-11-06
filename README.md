@@ -1,3 +1,4 @@
+[![CI](https://github.com/Tok/SuperColliderMCP/actions/workflows/ci.yml/badge.svg)](https://github.com/Tok/SuperColliderMCP/actions/workflows/ci.yml)
 [![Verified on MseeP](https://mseep.ai/badge.svg)](https://mseep.ai/app/70ac07b9-ec05-4fec-9456-5c4331cdf994)
 
 # SuperCollider MCP 🎛️
@@ -36,7 +37,7 @@ macOS, `sudo apt install supercollider` on Debian/Ubuntu), then boot the server:
 Claude Code:
 
 ```bash
-claude mcp add supercollider -- uvx supercollidermcp
+claude mcp add supercollider -- uvx supercollider-mcp
 ```
 
 Claude Desktop, Cursor, Cline, Roo Code and other clients that use an `mcpServers` config:
@@ -46,14 +47,14 @@ Claude Desktop, Cursor, Cline, Roo Code and other clients that use an `mcpServer
   "mcpServers": {
     "supercollider": {
       "command": "uvx",
-      "args": ["supercollidermcp"]
+      "args": ["supercollider-mcp"]
     }
   }
 }
 ```
 
 To run the latest code from GitHub instead of the PyPI release, use
-`"args": ["--from", "git+https://github.com/Tok/SuperColliderMCP", "supercollidermcp"]`.
+`"args": ["--from", "git+https://github.com/Tok/SuperColliderMCP", "supercollider-mcp"]`.
 
 **3. Ask for something.** Start with "play a test sound" to check the connection, then try the prompts
 below.
@@ -66,7 +67,7 @@ below.
 | scsynth UDP port | `--port` | `SC_PORT` | `57110` |
 | log level (stderr) | `--log-level` | | `WARNING` |
 
-For example `"args": ["supercollidermcp", "--port", "57111"]`.
+For example `"args": ["supercollider-mcp", "--port", "57111"]`.
 
 ## Tools
 
@@ -118,7 +119,7 @@ length in beats, and `.` is a rest.
 ## How it works
 
 ```
-assistant ──MCP (stdio)──▶ supercollidermcp ──OSC/UDP──▶ scsynth ──▶ speakers
+assistant ──MCP (stdio)──▶ supercollider-mcp ──OSC/UDP──▶ scsynth ──▶ speakers
 ```
 
 On first use the server checks that scsynth answers, uploads its SynthDefs (`/d_recv`) and creates its own
@@ -133,7 +134,7 @@ a call asks for effects, its voices go to a private bus that one `mcp_fx` synth 
 
 ## Upgrading from 0.1
 
-- Point your MCP config at `uvx supercollidermcp` as shown above. Old configs that run
+- Point your MCP config at `uvx supercollider-mcp` as shown above. Old configs that run
   `mcp run path/to/server.py` still work through a small compatibility `server.py`.
 - Sounds now come from real SynthDefs, so you no longer need sclang's `default` synth.
 - Tools return right away instead of blocking until the sound ends.
@@ -148,7 +149,11 @@ See [CHANGELOG.md](CHANGELOG.md) for everything else.
 - **"No reply from the SuperCollider server…"**: scsynth is not running, or it listens on a different
   port. Boot it, or set `SC_PORT`.
 - **Calls succeed but you hear nothing**: check that scsynth's outputs are connected to your sound card
-  (JACK/PipeWire users: check the routing) and that `server_status` shows synths while something plays.
+  and that `server_status` shows synths while something plays.
+- **Linux with PipeWire** (the default on current Ubuntu and Fedora): scsynth talks to JACK, so install
+  PipeWire's JACK layer (`sudo apt install pipewire-jack`) and start SuperCollider through it:
+  `pw-jack scide`, or `pw-jack scsynth -u 57110` without the IDE. Otherwise scsynth tries to start its
+  own `jackd`, which conflicts with PipeWire.
 - **`FAILURE IN SERVER /g_queryTree Group 2147480000 not found` in the post window** on first connect is
   expected: it is how the server notices that scsynth still needs to be set up.
 - **Remote scsynth**: timetags use wall-clock time, so keep both machines' clocks in sync (NTP).

@@ -15,7 +15,7 @@ A rewrite. Every tool now produces the sound it describes, and none of them bloc
 - Custom drum patterns as step strings (`X x o .`), five lanes, independent lane lengths, swing.
 - Scales: harmonic/melodic minor, the church modes, minor pentatonic, whole tone, chromatic.
 - Chords: 6, m6, mmaj7, m7b5, 7sus4, 9, maj9, m9, madd9 and slash chords (`G/B`).
-- `supercollidermcp` command (`uvx supercollidermcp`), configurable with `--host`/`--port` or
+- `supercollider-mcp` command (`uvx supercollider-mcp`), configurable with `--host`/`--port` or
   `SC_HOST`/`SC_PORT`.
 - Test suite: unit tests, protocol tests against a fake scsynth, offline renders of every SynthDef with
   `scsynth -N`, and an end-to-end test against a live server. CI on Python 3.10–3.13.

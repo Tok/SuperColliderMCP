@@ -2,7 +2,7 @@ name: Release
 
 # Publishes to PyPI when a GitHub release is published. Uses PyPI trusted publishing:
 # add this repository and workflow (release.yml, environment "pypi") as a trusted
-# publisher for the "supercollidermcp" project on pypi.org first.
+# publisher for the "supercollider-mcp" project on pypi.org first.
 on:
   release:
     types: [published]

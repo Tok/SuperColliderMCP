@@ -1,6 +1,6 @@
 """Compatibility shim for configs written for v0.1 (`mcp run path/to/server.py`).
 
-New setups should run the installed command instead, e.g. `uvx supercollidermcp`;
+New setups should run the installed command instead, e.g. `uvx supercollider-mcp`;
 see the README.
 """
 

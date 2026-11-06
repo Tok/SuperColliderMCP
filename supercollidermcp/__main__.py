@@ -1,4 +1,4 @@
-"""Run the MCP server over stdio: `supercollidermcp` or `python -m supercollidermcp`."""
+"""Run the MCP server over stdio: `supercollider-mcp` or `python -m supercollidermcp`."""
 
 from __future__ import annotations
 
@@ -14,7 +14,7 @@ from .server import config_from_env, create_server
 
 def main(argv: list[str] | None = None) -> None:
     host, port = config_from_env()
-    parser = argparse.ArgumentParser(prog="supercollidermcp", description="MCP server for SuperCollider (stdio)")
+    parser = argparse.ArgumentParser(prog="supercollider-mcp", description="MCP server for SuperCollider (stdio)")
     parser.add_argument("--host", default=host, help=f"scsynth host (env SC_HOST, default {host})")
     parser.add_argument("--port", type=int, default=port, help=f"scsynth UDP port (env SC_PORT, default {port})")
     parser.add_argument("--log-level", default="WARNING", choices=["DEBUG", "INFO", "WARNING", "ERROR"])
